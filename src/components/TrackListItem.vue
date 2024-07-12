@@ -59,7 +59,7 @@
     </div>
 
     <div v-if="showAlbumName" class="album">
-      <router-link v-if="album && album.id" :to="`/album/${album.id}`">{{
+      <router-link v-if="album" :to="`/album/${album.id}`">{{
         album.name
       }}</router-link>
       <div></div>
@@ -115,7 +115,7 @@ export default {
         : this.trackProp;
     },
     playable() {
-      return this.track?.privilege?.pl > 0 || this.track?.playable;
+      return true;
     },
     imgUrl() {
       let image =
@@ -166,7 +166,7 @@ export default {
       return this.type === 'playlist';
     },
     isLiked() {
-      return this.$parent.liked.songs.includes(this.track?.id);
+      return this.$parent.liked.songs.includes(this.track?.hash);
     },
     isPlaying() {
       return this.$store.state.player.currentTrack.id === this.track?.id;
@@ -217,7 +217,7 @@ export default {
       this.$parent.playThisList(this.track.id);
     },
     likeThisSong() {
-      this.$parent.likeATrack(this.track.id);
+      this.$parent.likeATrack(this.track);
     },
   },
 };

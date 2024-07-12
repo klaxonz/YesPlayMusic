@@ -62,7 +62,7 @@ export function ipcRenderer(vueInstance) {
   });
 
   ipcRenderer.on('like', () => {
-    store.dispatch('likeATrack', player.currentTrack.id);
+    store.dispatch('likeATrack', player.currentTrack);
   });
 
   ipcRenderer.on('repeat', () => {

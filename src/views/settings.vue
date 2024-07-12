@@ -3,7 +3,7 @@
     <div class="container">
       <div v-if="showUserInfo" class="user">
         <div class="left">
-          <img class="avatar" :src="data.user.avatarUrl" loading="lazy" />
+          <img class="avatar" :src="data.user.pic" loading="lazy" />
           <div class="info">
             <div class="nickname">{{ data.user.nickname }}</div>
             <div class="extra-info">
@@ -93,9 +93,9 @@
             <option value="128000">
               {{ $t('settings.musicQuality.low') }} - 128Kbps
             </option>
-            <option value="192000">
+            <!-- <option value="192000">
               {{ $t('settings.musicQuality.medium') }} - 192Kbps
-            </option>
+            </option> -->
             <option value="320000">
               {{ $t('settings.musicQuality.high') }} - 320Kbps
             </option>

@@ -67,7 +67,7 @@
         :track-prop="track"
         :track-no="index + 1"
         :highlight-playing-track="highlightPlayingTrack"
-        @dblclick.native="playThisList(track.id || track.songId)"
+        @dblclick.native="playThisList(track.hash)"
         @click.right.native="openMenu($event, track, index)"
       />
     </div>
@@ -102,8 +102,8 @@ export default {
       default: 'tracklist',
     }, // tracklist | album | playlist | cloudDisk
     id: {
-      type: Number,
-      default: 0,
+      type: String,
+      default: '',
     },
     dbclickTrackFunc: {
       type: String,
@@ -157,7 +157,7 @@ export default {
   computed: {
     ...mapState(['liked', 'player']),
     isRightClickedTrackLiked() {
-      return this.liked.songs.includes(this.rightClickedTrack?.id);
+      return this.liked.songs.includes(this.rightClickedTrack?.hash);
     },
     rightClickedTrackComputed() {
       return this.type === 'cloudDisk'
@@ -227,13 +227,13 @@ export default {
       }
     },
     play() {
-      this.player.addTrackToPlayNext(this.rightClickedTrack.id, true);
+      this.player.addTrackToPlayNext(this.rightClickedTrack.hash, true);
     },
     addToQueue() {
-      this.player.addTrackToPlayNext(this.rightClickedTrack.id);
+      this.player.addTrackToPlayNext(this.rightClickedTrack.hash);
     },
     like() {
-      this.likeATrack(this.rightClickedTrack.id);
+      this.likeATrack(this.rightClickedTrack);
     },
     addTrackToPlaylist() {
       if (!isAccountLoggedIn()) {

@@ -2,7 +2,6 @@
 import { isAccountLoggedIn, isLooseLoggedIn } from '@/utils/auth';
 import { likeATrack } from '@/api/track';
 import { getPlaylistDetail } from '@/api/playlist';
-import { getTrackDetail } from '@/api/track';
 import {
   userPlaylist,
   userPlayHistory,
@@ -32,42 +31,64 @@ export default {
       }, 3200),
     });
   },
-  likeATrack({ state, commit, dispatch }, id) {
+  likeATrack({ state, commit, dispatch }, track) {
+    console.log('add', track)
+
+
     if (!isAccountLoggedIn()) {
       dispatch('showToast', '此操作需要登录网易云账号');
       return;
     }
     let like = true;
-    if (state.liked.songs.includes(id)) like = false;
-    likeATrack({ id, like })
-      .then(() => {
+    if (state.liked.songs.includes(track.hash)) {
+      like = false
+      const song = state.liked.songsWithDetails.filter(song => song.hash === track.hash)[0]
+      track.fileid = song.fileid
+    };
+    likeATrack({ track, like })
+      .then(data => {
         if (like === false) {
           commit('updateLikedXXX', {
             name: 'songs',
-            data: state.liked.songs.filter(d => d !== id),
+            data: state.liked.songs.filter(d => d !== track.hash),
+          });
+          commit('updateLikedXXX', {
+            name: 'songsWithDetails',
+            data: state.liked.songsWithDetails.filter(d => d.hash !== track.hash),
           });
         } else {
           let newLikeSongs = state.liked.songs;
-          newLikeSongs.push(id);
+          newLikeSongs.push(track.hash);
           commit('updateLikedXXX', {
             name: 'songs',
             data: newLikeSongs,
           });
+          let newLikeSongsWithDetails = state.liked.songsWithDetails;
+          track.fileid = data.data.list_ver;
+          console.log(111, newLikeSongsWithDetails.length)
+          newLikeSongsWithDetails.push(track);
+          console.log(113, newLikeSongsWithDetails.length)
+
+          commit('updateLikedXXX', {
+            name: 'songsWithDetails',
+            data: newLikeSongsWithDetails,
+          });
         }
-        dispatch('fetchLikedSongsWithDetails');
+        // dispatch('fetchLikedSongsWithDetails');
       })
-      .catch(() => {
+      .catch((e) => {
         dispatch('showToast', '操作失败，专辑下架或版权锁定');
       });
   },
   fetchLikedSongs: ({ state, commit }) => {
     if (!isLooseLoggedIn()) return;
     if (isAccountLoggedIn()) {
-      return userLikedSongsIDs({ uid: state.data.user.userId }).then(result => {
-        if (result.ids) {
+      return userLikedSongsIDs(state.data.likedSongPlaylistID).then(result => {
+        if (result?.data?.info) {
+          const ids = result.data.info.map(item => item.hash);
           commit('updateLikedXXX', {
             name: 'songs',
-            data: result.ids,
+            data: ids,
           });
         }
       });
@@ -76,44 +97,41 @@ export default {
     }
   },
   fetchLikedSongsWithDetails: ({ state, commit }) => {
-    return getPlaylistDetail(state.data.likedSongPlaylistID, true).then(
-      result => {
-        if (result.playlist?.trackIds?.length === 0) {
-          return new Promise(resolve => {
-            resolve();
-          });
-        }
-        return getTrackDetail(
-          result.playlist.trackIds
-            .slice(0, 12)
-            .map(t => t.id)
-            .join(',')
-        ).then(result => {
-          commit('updateLikedXXX', {
-            name: 'songsWithDetails',
-            data: result.songs,
-          });
+    return getPlaylistDetail(
+      state.data.likedSongPlaylistID,
+      true
+    ).then(result => {
+      if (result.playlist?.tracks?.length === 0) {
+        return new Promise(resolve => {
+          resolve();
         });
       }
-    );
+      commit('updateLikedXXX', {
+        name: 'songsWithDetails',
+        data: result.playlist.tracks,
+      });
+      return new Promise(resolve => {
+        resolve();
+      });
+    });
   },
-  fetchLikedPlaylist: ({ state, commit }) => {
+  fetchLikedPlaylist: ({ commit }) => {
     if (!isLooseLoggedIn()) return;
     if (isAccountLoggedIn()) {
       return userPlaylist({
-        uid: state.data.user?.userId,
-        limit: 2000, // 最多只加载2000个歌单（等有用户反馈问题再修）
+        page: 1,
+        pagesize: 30, // 最多只加载2000个歌单（等有用户反馈问题再修）
         timestamp: new Date().getTime(),
       }).then(result => {
-        if (result.playlist) {
+        if (result.data.info) {
           commit('updateLikedXXX', {
             name: 'playlists',
-            data: result.playlist,
+            data: result.data.info,
           });
           // 更新用户”喜欢的歌曲“歌单ID
           commit('updateData', {
             key: 'likedSongPlaylistID',
-            value: result.playlist[0].id,
+            value: result.data.info[1].global_collection_id,
           });
         }
       });
@@ -193,8 +211,9 @@ export default {
   fetchUserProfile: ({ commit }) => {
     if (!isAccountLoggedIn()) return;
     return userAccount().then(result => {
-      if (result.code === 200) {
-        commit('updateData', { key: 'user', value: result.profile });
+      if (result.status === 1) {
+        result.data.avatarUrl = result.data.pic
+        commit('updateData', { key: 'user', value: result.data });
       }
     });
   },

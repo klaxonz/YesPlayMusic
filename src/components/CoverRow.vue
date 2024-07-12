@@ -2,12 +2,12 @@
   <div class="cover-row" :style="rowStyles">
     <div
       v-for="item in items"
-      :key="item.id"
+      :key="item.global_collection_id"
       class="item"
       :class="{ artist: type === 'artist' }"
     >
       <Cover
-        :id="item.id"
+        :id="item.global_collection_id"
         :image-url="getImageUrl(item)"
         :type="type"
         :play-button-size="type === 'artist' ? 26 : playButtonSize"
@@ -15,9 +15,7 @@
       <div class="text">
         <div v-if="showPlayCount" class="info">
           <span class="play-count"
-            ><svg-icon icon-class="play" />{{
-              item.playCount | formatPlayCount
-            }}
+            ><svg-icon icon-class="play" />{{ item.m_count | formatPlayCount }}
           </span>
         </div>
         <div class="title" :style="{ fontSize: subTextFontSize }">
@@ -70,7 +68,7 @@ export default {
       if (this.subText === 'copywriter') return item.copywriter;
       if (this.subText === 'description') return item.description;
       if (this.subText === 'updateFrequency') return item.updateFrequency;
-      if (this.subText === 'creator') return 'by ' + item.creator.nickname;
+      if (this.subText === 'creator') return 'by ' + item.list_create_username;
       if (this.subText === 'releaseYear')
         return new Date(item.publishTime).getFullYear();
       if (this.subText === 'artist') {
@@ -102,6 +100,7 @@ export default {
       return `/${this.type}/${item.id}`;
     },
     getImageUrl(item) {
+      return item.pic.replace('{size}', '480')
       if (item.img1v1Url) {
         let img1v1ID = item.img1v1Url.split('/');
         img1v1ID = img1v1ID[img1v1ID.length - 1];

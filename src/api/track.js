@@ -15,18 +15,23 @@ import {
  * @param {string} id - 音乐的 id，例如 id=405998841,33894312
  */
 export function getMP3(id) {
-  const getBr = () => {
-    // 当返回的 quality >= 400000时，就会优先返回 hi-res
-    const quality = store.state.settings?.musicQuality ?? '320000';
-    return quality === 'flac' ? '350000' : quality;
+  const getQuality = () => {
+      const qualityMap = {
+    '128000': '128',
+    '320000': '320',
+    'flac': 'flac',
+  };
+  const quality = store.state.settings?.musicQuality ?? '320000';
+  return qualityMap[quality] || 'high';
   };
 
   return request({
     url: '/song/url',
     method: 'get',
     params: {
-      id,
-      br: getBr(),
+      hash: id,
+      quality: getQuality(),
+      timestamp: new Date().getTime()
     },
   });
 }
@@ -37,22 +42,45 @@ export function getMP3(id) {
  * @param {string} ids - 音乐 id, 例如 ids=405998841,33894312
  */
 export function getTrackDetail(ids) {
-  const fetchLatest = () => {
-    return request({
-      url: '/song/detail',
+  const fetchLatest = () =>
+    request({
+      url: '/privilege/lite',
       method: 'get',
-      params: {
-        ids,
-      },
+      params: { hash: ids },
     }).then(data => {
-      data.songs.map(song => {
-        const privileges = data.privileges.find(t => t.id === song.id);
-        cacheTrackDetail(song, privileges);
-      });
-      data.songs = mapTrackPlayableStatus(data.songs, data.privileges);
-      return data;
-    });
-  };
+        const songs = data.data;
+        const promises = songs.map(async song => {
+          const basename = song.name.replace('.mp3', '');
+          const splitnames = basename.split(' - ');
+          const songname = splitnames[1].trim();
+          song.name = songname;
+          song.dt = song.info.duration
+          song.ar = [];
+
+          const albumResult = await request({
+            url: '/images',
+            method: 'get',
+            params: { hash: song.hash },
+          });
+
+          song.al = {
+            id: albumResult?.data?.[0]?.album?.[0]?.album_id || '',
+            name: albumResult?.data?.[0]?.album?.[0]?.album_name || '',
+            picUrl: albumResult?.data?.[0]?.album?.[0]?.sizable_cover?.replace("{size}", '480') || '',
+          };
+
+          albumResult.data[0].author.forEach(singer => {
+            song.ar.push({
+              id: singer.author_id,
+              name: singer.author_name,
+            });
+          });
+
+          return song;
+        });
+
+        return Promise.all(promises).then(songs => ({ songs }));
+  });
   fetchLatest();
 
   let idsInArray = [String(ids)];
@@ -73,23 +101,36 @@ export function getTrackDetail(ids) {
  * 说明 : 调用此接口 , 传入音乐 id 可获得对应音乐的歌词 ( 不需要登录 )
  * @param {number} id - 音乐 id
  */
-export function getLyric(id) {
+export function getLyric(hash) {
   const fetchLatest = () => {
     return request({
-      url: '/lyric',
+      url: '/search/lyric',
       method: 'get',
       params: {
-        id,
+        hash,
       },
-    }).then(result => {
-      cacheLyric(id, result);
-      return result;
+    }).then(async result => {
+      
+     const lc = await request({
+        url: '/lyric',
+        method: 'get',
+        params: {
+          id: result.candidates[0].id,
+          accesskey: result.candidates[0].accesskey,
+          fmt: 'lrc',
+          decode: true
+        },
+      }).then(result => {
+        return result.decodeContent;
+      })
+      cacheLyric(hash, lc);
+      return lc;
     });
   };
 
   fetchLatest();
 
-  return getLyricFromCache(id).then(result => {
+  return getLyricFromCache(hash).then(result => {
     return result ?? fetchLatest();
   });
 }
@@ -120,11 +161,63 @@ export function topSong(type) {
  */
 export function likeATrack(params) {
   params.timestamp = new Date().getTime();
+
+  const { track, like } = params
+
+  const listid = 2
+  const isPersonalFM = store.state.player._isPersonalFM;
+  const data = `${track.name}|${track.hash}|${track.album_id}|${track.album_audio_id}`
+  if (like) {
+    if (isPersonalFM) {
+      store.state.player.likeFMTrack('click_red')
+    }
+
+    return request({
+      url: '/playlist/tracks/add',
+      method: 'get',
+      params: {
+        listid,
+        data,
+        timestamp: new Date().getTime(),
+      },
+    });  
+  } else {
+    if (isPersonalFM) {
+      store.state.player.likeFMTrack('cancel_red')
+    }
+
+    return request({
+      url: '/playlist/tracks/del',
+      method: 'get',
+      params: {
+        listid,
+        fileids: track.fileid,
+        timestamp: new Date().getTime(),
+      },
+    });  
+  }
+
+
+}
+
+export function personalFm(mode='normal', song_pool_id = 0, action='play', isOverPlay = true, playtime = 0) {
+
+  const track = undefined
+
+  const params = {
+    hash: track?.hash,
+    mode,
+    song_pool_id,
+    action,
+    playtime,
+    isOverPlay,
+  }
+
   return request({
-    url: '/like',
-    method: 'get',
+    url: '/personal/fm',
+    method: 'post',
     params,
-  });
+  })
 }
 
 /**

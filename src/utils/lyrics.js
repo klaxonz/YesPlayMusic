@@ -1,8 +1,8 @@
 export function lyricParser(lrc) {
   return {
-    lyric: parseLyric(lrc?.lrc?.lyric || ''),
-    tlyric: parseLyric(lrc?.tlyric?.lyric || ''),
-    romalyric: parseLyric(lrc?.romalrc?.lyric || ''),
+    lyric: parseLyric(lrc || ''),
+    tlyric: parseLyric('' || ''),
+    romalyric: parseLyric('' || ''),
     lyricuser: lrc.lyricUser,
     transuser: lrc.transUser,
   };

@@ -8,6 +8,7 @@
     <TrackList
       :tracks="dailyTracks"
       type="playlist"
+      item-key="id+index"
       dbclick-track-func="dailyTracks"
     />
   </div>

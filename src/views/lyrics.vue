@@ -77,7 +77,7 @@
                       >{{ album.name }}
                     </router-link>
                   </span>
-                </div>
+                </div> 
               </div>
               <div class="top-right">
                 <div class="volume-control">
@@ -105,7 +105,7 @@
                 <div class="buttons">
                   <button-icon
                     :title="$t('player.like')"
-                    @click.native="likeATrack(player.currentTrack.id)"
+                    @click.native="likeATrack(player.currentTrack)"
                   >
                     <svg-icon
                       :icon-class="
@@ -497,9 +497,9 @@ export default {
       }
     },
     getLyric() {
-      if (!this.currentTrack.id) return;
-      return getLyric(this.currentTrack.id).then(data => {
-        if (!data?.lrc?.lyric) {
+      if (!this.currentTrack.hash) return;
+      return getLyric(this.currentTrack.hash).then(data => {
+        if (!data) {
           this.lyric = [];
           this.tlyric = [];
           this.romalyric = [];
@@ -595,7 +595,7 @@ export default {
     },
     getCoverColor() {
       if (this.settings.lyricsBackground !== true) return;
-      const cover = this.currentTrack.al?.picUrl + '?param=256y256';
+      const cover = this.currentTrack.info?.image;
       Vibrant.from(cover, { colorCount: 1 })
         .getPalette()
         .then(palette => {
@@ -735,6 +735,17 @@ export default {
       margin-top: 4px;
       font-size: 1rem;
       opacity: 0.58;
+      display: -webkit-box;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 1;
+      overflow: hidden;
+    }
+
+    .ai-title {
+      margin-top: 4px;
+      font-size: 0.8rem;
+      opacity: 0.58;
+      cursor: pointer;
       display: -webkit-box;
       -webkit-box-orient: vertical;
       -webkit-line-clamp: 1;

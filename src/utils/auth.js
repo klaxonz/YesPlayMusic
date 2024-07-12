@@ -22,14 +22,13 @@ export function removeCookie(key) {
 
 // MUSIC_U 只有在账户登录的情况下才有
 export function isLoggedIn() {
-  return getCookie('MUSIC_U') !== undefined;
+  return getCookie('token') !== undefined;
 }
 
 // 账号登录
 export function isAccountLoggedIn() {
   return (
-    getCookie('MUSIC_U') !== undefined &&
-    store.state.data.loginMode === 'account'
+    getCookie('token') !== undefined && store.state.data.loginMode === 'account'
   );
 }
 

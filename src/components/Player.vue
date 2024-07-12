@@ -55,7 +55,7 @@
                   ? $t('player.unlike')
                   : $t('player.like')
               "
-              @click.native="likeATrack(player.currentTrack.id)"
+              @click.native="likeATrack(player.currentTrack)"
             >
               <svg-icon
                 v-show="!player.isCurrentTrackLiked"

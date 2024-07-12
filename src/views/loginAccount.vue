@@ -116,7 +116,6 @@ import QRCode from 'qrcode';
 import md5 from 'crypto-js/md5';
 import NProgress from 'nprogress';
 import { mapMutations } from 'vuex';
-import { setCookies } from '@/utils/auth';
 import nativeAlert from '@/utils/nativeAlert';
 import {
   loginWithPhone,
@@ -220,7 +219,6 @@ export default {
         return;
       }
       if (data.code === 200) {
-        setCookies(data.cookie);
         this.updateData({ key: 'loginMode', value: 'account' });
         this.$store.dispatch('fetchUserProfile').then(() => {
           this.$store.dispatch('fetchLikedPlaylist').then(() => {
@@ -234,10 +232,10 @@ export default {
     },
     getQrCodeKey() {
       return loginQrCodeKey().then(result => {
-        if (result.code === 200) {
-          this.qrCodeKey = result.data.unikey;
+        if (result.status === 1) {
+          this.qrCodeKey = result.data.qrcode;
           QRCode.toString(
-            `https://music.163.com/login?codekey=${this.qrCodeKey}`,
+            `https://h5.kugou.com/apps/loginQRCode/html/index.html?qrcode=${this.qrCodeKey}`,
             {
               width: 192,
               margin: 0,
@@ -269,18 +267,17 @@ export default {
       this.qrCodeCheckInterval = setInterval(() => {
         if (this.qrCodeKey === '') return;
         loginQrCodeCheck(this.qrCodeKey).then(result => {
-          if (result.code === 800) {
+          if (result.data.status === 0) {
             this.getQrCodeKey(); // 重新生成QrCode
             this.qrCodeInformation = '二维码已失效，请重新扫码';
-          } else if (result.code === 802) {
+          } else if (result.data.status === 2) {
             this.qrCodeInformation = '扫描成功，请在手机上确认登录';
-          } else if (result.code === 801) {
+          } else if (result.data.status === 1) {
             this.qrCodeInformation = '打开网易云音乐APP扫码登录';
-          } else if (result.code === 803) {
+          } else if (result.data.status === 4) {
             clearInterval(this.qrCodeCheckInterval);
             this.qrCodeInformation = '登录成功，请稍等...';
             result.code = 200;
-            result.cookie = result.cookie.replaceAll(' HTTPOnly', '');
             this.handleLoginResponse(result);
           }
         });

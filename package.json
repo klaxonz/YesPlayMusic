@@ -27,8 +27,8 @@
   },
   "dependencies": {
     "@unblockneteasemusic/rust-napi": "^0.4.0",
-    "NeteaseCloudMusicApi": "^4.8.7",
-    "axios": "^0.26.1",
+    "kugoumusicapi": "/Users/klaxon/Code/Fork/KuGouMusicApi",
+    "axios": "^1.2.2",
     "change-case": "^4.1.2",
     "cli-color": "^2.0.0",
     "color": "^4.2.3",
@@ -81,15 +81,9 @@
   "devDependencies": {
     "@types/node": "^17.0.0",
     "@vue/cli-plugin-babel": "~4.5.0",
-    "@vue/cli-plugin-eslint": "~4.5.0",
     "@vue/cli-plugin-pwa": "~4.5.0",
     "@vue/cli-plugin-vuex": "~4.5.0",
     "@vue/cli-service": "~4.5.0",
-    "babel-eslint": "^10.1.0",
-    "eslint": "^6.7.2",
-    "eslint-config-prettier": "^8.1.0",
-    "eslint-plugin-prettier": "^3.3.1",
-    "eslint-plugin-vue": "^7.9.0",
     "husky": "^4.3.0",
     "prettier": "2.5.1",
     "sass": "^1.26.11",
@@ -101,26 +95,6 @@
     "icon-gen": "3.0.0",
     "degenerator": "2.2.0",
     "electron-builder": "^23.0.0"
-  },
-  "eslintConfig": {
-    "root": true,
-    "env": {
-      "node": true,
-      "browser": true
-    },
-    "extends": [
-      "plugin:vue/essential",
-      "plugin:vue/recommended",
-      "plugin:prettier/recommended",
-      "eslint:recommended"
-    ],
-    "parserOptions": {
-      "parser": "babel-eslint"
-    },
-    "globals": {
-      "ipcRenderer": "off"
-    },
-    "rules": {}
   },
   "browserslist": [
     "> 1%",

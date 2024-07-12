@@ -106,6 +106,7 @@
       <TrackList
         :tracks="popularTracks.slice(0, showMorePopTracks ? 24 : 12)"
         :type="'tracklist'"
+        item-key="id+index"
       />
 
       <div id="seeMore" class="show-more">

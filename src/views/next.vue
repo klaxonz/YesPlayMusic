@@ -23,6 +23,7 @@
     <TrackList
       :tracks="filteredTracks"
       type="playlist"
+      item-key="id+index"
       :highlight-playing-track="false"
       dbclick-track-func="playTrackOnListByID"
     />
@@ -57,14 +58,14 @@ export default {
         this.player.current + 1,
         this.player.current + 100
       );
-      return this.tracks.filter(t => trackIDs.includes(t.id));
+      return this.tracks.filter(t => trackIDs.includes(t.hash));
     },
     playNextList() {
       return this.player.playNextList;
     },
     playNextTracks() {
       return this.playNextList.map(tid => {
-        return this.tracks.find(t => t.id === tid);
+        return this.tracks.find(t => t.hash === tid);
       });
     },
   },
@@ -87,6 +88,7 @@ export default {
     ...mapActions(['playTrackOnListByID']),
     loadTracks() {
       // 获取播放列表当前歌曲后100首歌
+      console.log('list', this.player)
       let trackIDs = this.player.list.slice(
         this.player.current + 1,
         this.player.current + 100

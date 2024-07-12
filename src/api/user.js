@@ -23,7 +23,7 @@ export function userDetail(uid) {
  */
 export function userAccount() {
   return request({
-    url: '/user/account',
+    url: '/login/token',
     method: 'get',
     params: {
       timestamp: new Date().getTime(),
@@ -47,6 +47,13 @@ export function userPlaylist(params) {
     url: '/user/playlist',
     method: 'get',
     params,
+  }).then(result => {
+    result.data.info.forEach(playlist => {
+      playlist.creator = {
+        userId: playlist.list_create_userid
+      }
+    });
+    return result
   });
 }
 
@@ -69,16 +76,18 @@ export function userPlayHistory(params) {
 
 /**
  * 喜欢音乐列表（需要登录）
- * 说明 : 调用此接口 , 传入用户 id, 可获取已喜欢音乐id列表(id数组)
- * - uid: 用户 id
- * @param {number} uid
+ * 说明 : 调用此接口 , 传入歌单 id, 可获取已喜欢音乐id列表(id数组)
+ * - gid: 歌单 id
+ * @param {number} gid
  */
-export function userLikedSongsIDs(uid) {
+export function userLikedSongsIDs(gid) {
   return request({
-    url: '/likelist',
+    url: '/playlist/track/all',
     method: 'get',
     params: {
-      uid,
+      id: gid,
+      page: 1,
+      pagesize: 300,
       timestamp: new Date().getTime(),
     },
   });

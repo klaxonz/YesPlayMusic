@@ -43,7 +43,7 @@ const excludeSaveKeys = [
 
 function setTitle(track) {
   document.title = track
-    ? `${track.name} · ${track.ar[0].name} - YesPlayMusic`
+    ? `${track.name} - YesPlayMusic`
     : 'YesPlayMusic';
   if (isCreateTray) {
     ipcRenderer?.send('updateTrayTooltip', document.title);
@@ -81,9 +81,12 @@ export default class {
     this._playNextList = []; // 当这个list不为空时，会优先播放这个list的歌
     this._isPersonalFM = false; // 是否是私人FM模式
     this._personalFMTrack = { id: 0 }; // 私人FM当前歌曲
-    this._personalFMNextTrack = {
-      id: 0,
-    }; // 私人FM下一首歌曲信息（为了快速加载下一首）
+    // this._personalFMNextTrack = {
+    //   id: 0,
+    // }; // 私人FM下一首歌曲信息（为了快速加载下一首）
+    this._personalFMNextTrackList = []
+    this._mode = 'normal'
+    this._songPoolId = 0
 
     /**
      * The blob records for cleanup.
@@ -176,7 +179,7 @@ export default class {
     return this._currentTrack;
   }
   get currentTrackID() {
-    return this._currentTrack?.id ?? 0;
+    return this._currentTrack?.hash ?? 0;
   }
   get playlistSource() {
     return this._playlistSource;
@@ -191,11 +194,23 @@ export default class {
     return this._personalFMTrack;
   }
   get currentTrackDuration() {
-    const trackDuration = this._currentTrack.dt || 1000;
+    const trackDuration = this._currentTrack.info.duration || 1000;
     let duration = ~~(trackDuration / 1000);
     return duration > 1 ? duration - 1 : duration;
   }
-  get progress() {
+  get songPoolId() {
+    return this._songPoolId;
+  }
+  set songPoolId(id) {
+    this._songPoolId = id;
+  }
+  get mode() {
+    return this._mode;
+  }
+  set mode(mode) {
+    this._mode = mode;
+  }
+  get progress() { 
     return this._progress;
   }
   set progress(value) {
@@ -207,7 +222,7 @@ export default class {
     }
   }
   get isCurrentTrackLiked() {
-    return store.state.liked.songs.includes(this.currentTrack.id);
+    return store.state.liked.songs.includes(this.currentTrack.hash);
   }
 
   _init() {
@@ -225,17 +240,17 @@ export default class {
     this._setIntervals();
 
     // 初始化私人FM
-    if (
-      this._personalFMTrack.id === 0 ||
-      this._personalFMNextTrack.id === 0 ||
-      this._personalFMTrack.id === this._personalFMNextTrack.id
-    ) {
-      personalFM().then(result => {
-        this._personalFMTrack = result.data[0];
-        this._personalFMNextTrack = result.data[1];
-        return this._personalFMTrack;
-      });
-    }
+    // if (
+    //   this._personalFMTrack.id === 0 ||
+    //   this._personalFMNextTrack.id === 0 ||
+    //   this._personalFMTrack.id === this._personalFMNextTrack.id
+    // ) {
+    //   personalFM().then(result => {
+    //     this._personalFMTrack = result.data[0];
+    //     this._personalFMNextTrack = result.data[1];
+    //     return this._personalFMTrack;
+    //   });
+    // }
   }
   _setPlaying(isPlaying) {
     this._playing = isPlaying;
@@ -257,7 +272,7 @@ export default class {
     }, 1000);
   }
   _getNextTrack() {
-    const next = this._reversed ? this.current - 1 : this.current + 1;
+     const next = this._reversed ? this.current - 1 : this.current + 1;
 
     if (this._playNextList.length > 0) {
       let trackID = this._playNextList[0];
@@ -303,7 +318,7 @@ export default class {
   }
   async _scrobble(track, time, completed = false) {
     console.debug(
-      `[debug][Player.js] scrobble track 👉 ${track.name} by ${track.ar[0].name} 👉 time:${time} completed: ${completed}`
+      `[debug][Player.js] scrobble track 👉 ${track.name} by ${track.singername} 👉 time:${time} completed: ${completed}`
     );
     const trackDuration = ~~(track.dt / 1000);
     time = completed ? trackDuration : ~~time;
@@ -395,14 +410,15 @@ export default class {
   }
   _getAudioSourceFromNetease(track) {
     if (isAccountLoggedIn()) {
-      return getMP3(track.id).then(result => {
-        if (!result.data[0]) return null;
-        if (!result.data[0].url) return null;
-        if (result.data[0].freeTrialInfo !== null) return null; // 跳过只能试听的歌曲
-        const source = result.data[0].url.replace(/^http:/, 'https:');
+      return getMP3(track.hash).then(result => {
+        if (!result.url) return null;
+        if (!result.url[0]) return null;
+        const source = result.url[0].replace(/^http:/, 'https:');
         if (store.state.settings.automaticallyCacheSongs) {
-          cacheTrackSource(track, source, result.data[0].br);
+          cacheTrackSource(track, source, result.bitRate);
         }
+
+        // const source = result.url[0]
         return source;
       });
     } else {
@@ -494,7 +510,7 @@ export default class {
     ifUnplayableThen = UNPLAYABLE_CONDITION.PLAY_NEXT_TRACK
   ) {
     if (autoplay && this._currentTrack.name) {
-      this._scrobble(this.currentTrack, this._howler?.seek());
+      // this._scrobble(this.currentTrack, this._howler?.seek());
     }
     return getTrackDetail(id).then(data => {
       const track = data.songs[0];
@@ -520,7 +536,7 @@ export default class {
     return this._getAudioSource(track).then(source => {
       if (source) {
         let replaced = false;
-        if (track.id === this.currentTrackID) {
+        if (track.hash === this.currentTrackID) {
           this._playAudioSource(source, autoplay);
           replaced = true;
         }
@@ -634,7 +650,7 @@ export default class {
       return ipcRenderer?.send('metadata', metadata);
     }
 
-    let lyricContent = await getLyric(track.id);
+    let lyricContent = await getLyric(track.hash);
 
     if (!lyricContent.lrc || !lyricContent.lrc.lyric) {
       return ipcRenderer?.send('metadata', metadata);
@@ -739,49 +755,103 @@ export default class {
     this._replaceCurrentTrack(trackID);
     return true;
   }
-  async playNextFMTrack() {
+  async likeFMTrack(action = 'play') {
     if (this._personalFMLoading) {
       return false;
     }
 
     this._isPersonalFM = true;
-    if (!this._personalFMNextTrack) {
-      this._personalFMLoading = true;
-      let result = null;
-      let retryCount = 5;
-      for (; retryCount >= 0; retryCount--) {
-        result = await personalFM().catch(() => null);
-        if (!result) {
-          this._personalFMLoading = false;
-          store.dispatch('showToast', 'personal fm timeout');
-          return false;
-        }
-        if (result.data?.length > 0) {
-          break;
-        } else if (retryCount > 0) {
-          await delay(1000);
-        }
-      }
-      this._personalFMLoading = false;
 
-      if (retryCount < 0) {
-        let content = '获取私人FM数据时重试次数过多，请手动切换下一首';
-        store.dispatch('showToast', content);
-        console.log(content);
-        return false;
-      }
-      // 这里只能拿到一条数据
-      this._personalFMTrack = result.data[0];
+    this._personalFMLoading = true;
+    let songs = [];
+
+    let playtime = 0
+    let isOverplay = 0
+    let playProgress = this.progress / 2
+    if (playProgress > 100) {
+      playProgress = 100
+      isOverplay = 1
+      playtime = this.currentTrackDuration
     } else {
-      if (this._personalFMNextTrack.id === this._personalFMTrack.id) {
-        return false;
-      }
-      this._personalFMTrack = this._personalFMNextTrack;
+      playtime = playProgress * this.currentTrackDuration / 100
+      playtime = parseInt(playtime)
     }
+
+    const result = await personalFM(
+      this.currentTrack.hash,
+      this.currentTrack.id,
+      this._mode,
+      action,
+      this._songPoolId,
+      isOverplay,
+      playtime,
+      this._personalFMNextTrackList.length
+    ).catch(() => null);
+    console.log('personalFM', result)
+    if (!result) {
+      this._personalFMLoading = false;
+      store.dispatch('showToast', 'personal fm timeout');
+      return false;
+    }
+    songs = result?.data?.song_list?.reverse();
+
+    this._personalFMLoading = false;
+
+    // 这里只能拿到一条数据
+    if (songs?.length > 0) {
+      this._personalFMNextTrackList.push(...songs);
+    }
+  }
+  async playNextFMTrack(action = 'play') {
+    if (this._personalFMLoading) {
+      return false;
+    }
+
+    this._isPersonalFM = true;
+
+    this._personalFMLoading = true;
+
+    let playtime = 0
+    let isOverplay = 0
+    let playProgress = this.progress / 2
+    if (playProgress > 100) {
+      playProgress = 100
+      isOverplay = 1
+      playtime = this.currentTrackDuration
+    } else {
+      playtime = playProgress * this.currentTrackDuration / 100
+      playtime = parseInt(playtime)
+    }
+
+    const result = await personalFM(
+      this.currentTrack.hash,
+      this.currentTrack.id,
+      this._mode,
+      action,
+      this._songPoolId,
+      isOverplay,
+      playtime,
+      this._personalFMNextTrackList.length
+    ).catch(() => null);
+    if (!result) {
+      this._personalFMLoading = false;
+      store.dispatch('showToast', 'personal fm timeout');
+      return false;
+    }
+    const songs = result?.data?.song_list || [];
+
+    this._personalFMLoading = false;
+
+    this._personalFMTrack = this._personalFMNextTrackList.shift();
+    if (action === 'garbage') {
+      this._personalFMNextTrackList.length = 0
+    }
+    console.log('sds', songs)
+    this._personalFMNextTrackList.push(...songs);
+
     if (this._isPersonalFM) {
-      this._replaceCurrentTrack(this._personalFMTrack.id);
+      this._replaceCurrentTrack(this._personalFMTrack.hash);
     }
-    this._loadPersonalFMNextTrack();
     return true;
   }
   playPrevTrack() {
@@ -898,7 +968,7 @@ export default class {
   }
   playAlbumByID(id, trackID = 'first') {
     getAlbum(id).then(data => {
-      let trackIDs = data.songs.map(t => t.id);
+      let trackIDs = data.songs.map(t => t.hash);
       this.replacePlaylist(trackIDs, id, 'album', trackID);
     });
   }
@@ -907,7 +977,7 @@ export default class {
       `[debug][Player.js] playPlaylistByID 👉 id:${id} trackID:${trackID} noCache:${noCache}`
     );
     getPlaylistDetail(id, noCache).then(data => {
-      let trackIDs = data.playlist.trackIds.map(t => t.id);
+      let trackIDs = data.playlist.trackIds;
       this.replacePlaylist(trackIDs, id, 'playlist', trackID);
     });
   }
@@ -941,20 +1011,23 @@ export default class {
       this.playNextTrack();
     }
   }
-  playPersonalFM() {
+  async playPersonalFM() {
+    const fmResult = await personalFM()
+    const songlist = fmResult.data.song_list.reverse();
+    
+    this._personalFMTrack = songlist[0];
+    this._personalFMNextTrackList = songlist.slice(1, songlist.length);
+ 
     this._isPersonalFM = true;
-    if (this.currentTrackID !== this._personalFMTrack.id) {
-      this._replaceCurrentTrack(this._personalFMTrack.id, true);
+    if (this.currentTrackID !== this._personalFMTrack.hash) {
+      this._replaceCurrentTrack(this._personalFMTrack.hash, true);
+      this._personalFMNextTrackList.forEach(song => this.addTrackToPlayNext(song.hash, false))
     } else {
       this.playOrPause();
     }
   }
   async moveToFMTrash() {
-    this._isPersonalFM = true;
-    let id = this._personalFMTrack.id;
-    if (await this.playNextFMTrack()) {
-      fmTrash(id);
-    }
+    this.playNextFMTrack('garbage')
   }
 
   sendSelfToIpcMain() {

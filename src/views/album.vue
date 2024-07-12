@@ -2,7 +2,7 @@
   <div v-show="show" class="album-page">
     <div class="playlist-info">
       <Cover
-        :id="album.id"
+        :id="String(album.id)"
         :image-url="album.picUrl | resizeImage(1024)"
         :show-play-button="true"
         :always-show-shadow="true"
@@ -71,23 +71,25 @@
         </div>
       </div>
     </div>
-    <div v-if="tracksByDisc.length > 1">
+    <!-- <div v-if="tracksByDisc.length > 1">
       <div v-for="item in tracksByDisc" :key="item.disc">
         <h2 class="disc">Disc {{ item.disc }}</h2>
         <TrackList
-          :id="album.id"
+          :id="String(album.id)"
           :tracks="item.tracks"
           :type="'album'"
           :album-object="album"
+          item-key="id+index"
         />
       </div>
-    </div>
-    <div v-else>
+    </div> -->
+    <div>
       <TrackList
-        :id="album.id"
+        :id="String(album.id)"
         :tracks="tracks"
         :type="'album'"
         :album-object="album"
+        item-key="id+index"
       />
     </div>
     <div class="extra-info">
@@ -220,6 +222,7 @@ export default {
       }
     },
     tracksByDisc() {
+      return []
       if (this.tracks.length <= 1) return [];
       const pairs = toPairs(groupBy(this.tracks, 'cd'));
       return sortBy(pairs, p => p[0]).map(items => ({
@@ -284,19 +287,19 @@ export default {
         this.show = true;
 
         // to get explicit mark
-        let trackIDs = this.tracks.map(t => t.id);
-        getTrackDetail(trackIDs.join(',')).then(data => {
-          this.tracks = data.songs;
-        });
+        // let trackIDs = this.tracks.map(t => t.hash);
+        // getTrackDetail(trackIDs.join(',')).then(data => {
+        //   this.tracks = data.songs;
+        // });
 
         // get more album by this artist
-        getArtistAlbum({ id: this.album.artist.id, limit: 100 }).then(data => {
-          this.moreAlbums = data.hotAlbums;
-        });
+        // getArtistAlbum({ id: this.album.artist.id, limit: 100 }).then(data => {
+        //   this.moreAlbums = data.hotAlbums;
+        // });
       });
-      albumDynamicDetail(id).then(data => {
-        this.dynamicDetail = data;
-      });
+      // albumDynamicDetail(id).then(data => {
+      //   this.dynamicDetail = data;
+      // });
     },
     toggleFullDescription() {
       this.showFullDescription = !this.showFullDescription;

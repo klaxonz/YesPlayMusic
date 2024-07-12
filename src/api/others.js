@@ -28,13 +28,54 @@ export function search(params) {
   });
 }
 
-export function personalFM() {
+/**
+ * 私人 FM
+ * 说明 : 调用此接口 , 可获取私人 FM 列表
+ * - hash : 当前播放歌曲的 hash
+ * - songid : 当前播放歌曲的 id
+ * - mode : 模式，normal：发现，small: 小众，peak: 30s
+ * - action : 模式，play：播放，garbage：不喜欢
+ * - song_pool_id : 推荐模式，0: Alpha，1：Beta，2：Gamma
+ * - is_overplay : 是否结束播放，0：否，1：是
+ * - playtime : 播放时长，单位：秒
+ * - remain_songcnt : 剩余歌曲数量
+ * @param {string} hash 
+ * @param {number} songid 
+ * @param {string} mode 
+ * @param {string} action 
+ * @param {number} songPoolId 
+ * @param {number} isOverplay 
+ * @param {number} playtime 
+ * @param {number} remainSongCnt 
+ * @returns 
+ */
+export function personalFM(
+  hash,
+  songid,
+  mode = 'normal',
+  action = 'play',
+  songPoolId = 0,
+  isOverplay = 0,
+  playtime = 0,
+  remainSongCnt = 0,
+) {
+
+  const params = {
+    hash: hash,
+    songid: songid,
+    mode: mode,
+    action: action,
+    song_pool_id: songPoolId,
+    is_overplay: isOverplay,
+    playtime: playtime,
+    remain_songcnt: remainSongCnt,
+    timestamp: new Date().getTime(),
+  }
+
   return request({
-    url: '/personal_fm',
+    url: '/personal/fm',
     method: 'get',
-    params: {
-      timestamp: new Date().getTime(),
-    },
+    params: params
   });
 }
 

@@ -1,31 +1,87 @@
 import request from '@/utils/request';
-import { mapTrackPlayableStatus } from '@/utils/common';
 import { cacheAlbum, getAlbumFromCache } from '@/utils/db';
+
+
+/**
+ * 获取真实的封面 URL
+ * 说明：size 可选参数有 240, 480
+ * @param {*} cover 
+ * @param {number} size
+ * @returns 
+ */
+const buildCoverUrl = (cover, size = 480) => cover?.replace('{size}', size) || '';
 
 /**
  * 获取专辑内容
  * 说明 : 调用此接口 , 传入专辑 id, 可获得专辑内容
  * @param {number} id
  */
-export function getAlbum(id) {
-  const fetchLatest = () => {
-    return request({
-      url: '/album',
-      method: 'get',
-      params: {
-        id,
-      },
-    }).then(data => {
-      cacheAlbum(id, data);
-      data.songs = mapTrackPlayableStatus(data.songs);
-      return data;
-    });
-  };
-  fetchLatest();
-
-  return getAlbumFromCache(id).then(result => {
-    return result ?? fetchLatest();
+export async function getAlbum(id) {
+  const cachedData = await getAlbumFromCache(id);
+  return cachedData || fetchAlbumDetails(id).then(data => {
+    cacheAlbum(id, data);
+    return data;
   });
+}
+
+/**
+ * 获取专辑详情
+ * @param {number} albumId 
+ * @returns 
+ */
+async function fetchAlbumDetails(albumId) {
+  const albumData = await request({
+    url: '/album',
+    method: 'get',
+    params: { album_id: albumId },
+  });
+
+  const songsData = await getAlbumSongs(albumId);
+
+  const album = albumData.data[0];
+  albumData.album = {
+    name: album.album_name,
+    picUrl: buildCoverUrl(album.sizable_cover),
+    id: albumId,
+    info: album?.intro === 'None' ? album?.intro?.replace('None', '') : '',
+    type: 'Album',
+    publishTime: album.publish_date,
+    company: album.publish_company,
+    size: songsData.data.songs.length,
+  };
+
+  albumData.songs = songsData.data.songs.map(song => ({
+    id: song.base.album_audio_id,
+    name: song.base.audio_name,
+    hash: song.audio_info.hash,
+    al: {
+      id: song.base.album_id,
+      name: song.album_info.album_name,
+      picUrl: buildCoverUrl(song.album_info.cover),
+    },
+    dt: song.audio_info.duration,
+    ar: song.authors.map(ar => ({ id: ar.author_id, name: ar.author_name })),
+  }));
+
+  albumData.artist = songs.length > 0 ? { id: songs[0].ar[0].id, name: album.author_name } : null;
+
+  return albumData;
+}
+
+
+/**
+ * 获取指定专辑的歌曲列表
+ *
+ * @param {number} id - 专辑ID
+ */
+export function getAlbumSongs(id) {
+  request({
+    url: '/album/songs',
+    method: 'get',
+    params: {
+      id,
+    },
+  })
 }
 
 /**

@@ -40,25 +40,71 @@ export function dailyRecommendPlaylist(params) {
  * - id : 歌单 id
  * - s : 歌单最近的 s 个收藏者, 默认为8
  * @param {number} id
+ * @param {string} gid
  * @param {boolean=} noCache
  */
 export function getPlaylistDetail(id, noCache = false) {
-  let params = { id };
+  let params = { ids: id };
   if (noCache) params.timestamp = new Date().getTime();
   return request({
     url: '/playlist/detail',
     method: 'get',
     params,
   }).then(data => {
-    if (data.playlist) {
-      data.playlist.tracks = mapTrackPlayableStatus(
-        data.playlist.tracks,
-        data.privileges || []
-      );
+    if (data.data) {
+      return getPlaylistTrack(id, noCache).then(result => {
+        data.playlist = {};
+        data.playlist.creator = {}
+        data.playlist.id = id;
+        data.playlist.name = data.data[0].name;
+        data.playlist.description = data.data[0].intro;
+        data.playlist.coverImgUrl = data.data[0].pic.replace('{size}', '480');
+        data.playlist.creator.userId = result.data.userid;
+        data.playlist.creator.nickname = data.data[0].list_create_username;
+        data.playlist.trackCount = result.data.count;
+        data.playlist.tracks = result.data.info;
+        data.playlist.trackIds = result.data.info.map(item => item.hash);
+        result.data.info.forEach(item => {
+          const basename = item.name.replace('.mp3', '')
+          const splitnames = basename.split(' - ')
+          const name = splitnames[1].trim()
+          item.name = name;
+          item.ar = item.singerinfo
+          item.al = {}
+          item.al.id = item.albuminfo.id
+          item.al.name = item.albuminfo.name
+          item.al.picUrl = item.cover.replace('{size}', '480')
+          item.dt = item.timelen
+          item.id = item.audio_id
+        });
+
+        return data;
+      });
     }
     return data;
   });
 }
+
+/**
+ * 获取歌单歌曲
+ * @param {number} hash 歌曲 hash
+ * @param {*} noCache 是否读取缓存 默认为 false
+ * @returns 
+ */
+export function getPlaylistTrack(id, noCache = false) {
+  const params = {
+    id: id,
+    page: 1,
+    pagesize: 300,
+  }
+  if (noCache) params.timestamp = new Date().getTime();
+  return request({
+    url: '/playlist/track/all',
+    method: 'get',
+    params
+  });
+}
+
 /**
  * 获取精品歌单
  * 说明 : 调用此接口 , 可获取精品歌单

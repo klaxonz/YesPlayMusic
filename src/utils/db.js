@@ -132,8 +132,8 @@ export function cacheLyric(id, lyrics) {
   });
 }
 
-export function getLyricFromCache(id) {
-  return db.lyric.get(Number(id)).then(result => {
+export function getLyricFromCache(hash) {
+  return db.lyric.get(hash).then(result => {
     if (!result) return undefined;
     return result.lyrics;
   });

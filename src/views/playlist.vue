@@ -5,8 +5,8 @@
       class="playlist-info"
     >
       <Cover
-        :id="playlist.id"
-        :image-url="playlist.coverImgUrl | resizeImage(1024)"
+        :id="playlist.id.toString()"
+        :image-url="playlist.coverImgUrl"
         :show-play-button="true"
         :always-show-shadow="true"
         :click-cover-to-play="true"
@@ -165,8 +165,9 @@
     </div>
 
     <TrackList
-      :id="playlist.id"
+      :id="String(playlist.id)"
       :tracks="filteredTracks"
+      itemKey="id+index"
       type="playlist"
       :extra-context-menu-item="
         isUserOwnPlaylist ? ['removeTrackFromPlaylist'] : []
@@ -417,7 +418,7 @@ export default {
     ...mapMutations(['appendTrackToPlayerList']),
     ...mapActions(['playFirstTrackOnList', 'playTrackOnListByID', 'showToast']),
     playPlaylistByID(trackID = 'first') {
-      let trackIDs = this.playlist.trackIds.map(t => t.id);
+      let trackIDs = this.playlist.trackIds;
       this.$store.state.player.replacePlaylist(
         trackIDs,
         this.playlist.id,

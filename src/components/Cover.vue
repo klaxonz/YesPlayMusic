@@ -31,7 +31,7 @@
 <script>
 export default {
   props: {
-    id: { type: Number, required: true },
+    id: { type: String, required: true },
     type: { type: String, required: true },
     imageUrl: { type: String, required: true },
     fixedSize: { type: Number, default: 0 },

@@ -21,6 +21,7 @@
       <TrackList
         :tracks="result"
         type="playlist"
+        item-key="id+index"
         dbclick-track-func="playAList"
       />
     </div>

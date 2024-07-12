@@ -65,8 +65,8 @@ export default {
     ownPlaylists() {
       return this.liked.playlists.filter(
         p =>
-          p.creator.userId === this.data.user.userId &&
-          p.id !== this.data.likedSongPlaylistID
+          p.list_create_userid === this.data.user.userid &&
+          p.global_collection_id !== this.data.likedSongPlaylistID
       );
     },
   },

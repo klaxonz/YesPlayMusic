@@ -8,35 +8,49 @@
       />{{ data.user.nickname }}{{ $t('library.sLibrary') }}
     </h1>
     <div class="section-one">
-      <div class="liked-songs" @click="goToLikedSongsList">
-        <div class="top">
-          <p>
-            <span
-              v-for="(line, index) in pickedLyric"
-              v-show="line !== ''"
-              :key="`${line}${index}`"
-              >{{ line }}<br
-            /></span>
-          </p>
-        </div>
-        <div class="bottom">
-          <div class="titles">
-            <div class="title">{{ $t('library.likedSongs') }}</div>
-            <div class="sub-title">
-              {{ liked.songs.length }} {{ $t('common.songs') }}
+      <div class="button-group">
+        <div class="liked-songs">
+          <div class="bottom">
+            <div class="titles">
+              <div class="title">
+                私人FM 
+                <span @click.stop="openPersonalFmPlayModeTabMenu" style="font-size: 1rem; margin-left: 4px;"> 
+                  {{ personFMPlayModeName }}
+                 </span>
+              </div>
+              <div 
+                v-if="player._isPersonalFM"
+                class="sub-title" @click="openPersonalFmBotModeTabMenu">
+                {{ personFMBotName }} 正在为你推荐
+              </div>
             </div>
+            <button @click.stop="playPersonalFmSongs">
+              <svg-icon :icon-class="player._isPersonalFM && player._playing ? 'pause' : 'play'" />
+            </button>
           </div>
-          <button @click.stop="openPlayModeTabMenu">
-            <svg-icon icon-class="play" />
-          </button>
+        </div>
+        <div class="liked-songs" @click="goToLikedSongsList">
+          <div class="bottom">
+            <div class="titles">
+              <div class="title">{{ $t('library.likedSongs') }} </div>
+              <div class="sub-title">
+                {{ liked.songs.length }} {{ $t('common.songs') }}
+              </div>
+            </div>
+            <button @click.stop="playLikedSongs">
+              <svg-icon :icon-class="playingLikedSong ? 'pause' : 'play'" />
+            </button>
+          </div>
         </div>
       </div>
+
       <div class="songs">
         <TrackList
-          :id="liked.playlists.length > 0 ? liked.playlists[0].id : 0"
-          :tracks="liked.songsWithDetails"
-          :column-number="3"
+          :id="liked.playlists.length > 0 ? String(liked.playlists[0].id) : ''"
+          :tracks="randomLikedSongs"
+          :column-number="4"
           type="tracklist"
+          item-key="id+index"
           dbclick-track-func="playPlaylistByID"
         />
       </div>
@@ -121,64 +135,6 @@
           />
         </div>
       </div>
-
-      <div v-show="currentTab === 'albums'">
-        <CoverRow
-          :items="liked.albums"
-          type="album"
-          sub-text="artist"
-          :show-play-button="true"
-        />
-      </div>
-
-      <div v-show="currentTab === 'artists'">
-        <CoverRow
-          :items="liked.artists"
-          type="artist"
-          :show-play-button="true"
-        />
-      </div>
-
-      <div v-show="currentTab === 'mvs'">
-        <MvRow :mvs="liked.mvs" />
-      </div>
-
-      <div v-show="currentTab === 'cloudDisk'">
-        <TrackList
-          :id="-8"
-          :tracks="liked.cloudDisk"
-          :column-number="3"
-          type="cloudDisk"
-          dbclick-track-func="playCloudDisk"
-          :extra-context-menu-item="['removeTrackFromCloudDisk']"
-        />
-      </div>
-
-      <div v-show="currentTab === 'playHistory'">
-        <button
-          :class="{
-            'playHistory-button': true,
-            'playHistory-button--selected': playHistoryMode === 'week',
-          }"
-          @click="playHistoryMode = 'week'"
-        >
-          {{ $t('library.playHistory.week') }}
-        </button>
-        <button
-          :class="{
-            'playHistory-button': true,
-            'playHistory-button--selected': playHistoryMode === 'all',
-          }"
-          @click="playHistoryMode = 'all'"
-        >
-          {{ $t('library.playHistory.all') }}
-        </button>
-        <TrackList
-          :tracks="playHistoryList"
-          :column-number="1"
-          type="tracklist"
-        />
-      </div>
     </div>
 
     <input
@@ -201,14 +157,18 @@
       }}</div>
     </ContextMenu>
 
-    <ContextMenu ref="playModeTabMenu">
-      <div class="item" @click="playLikedSongs">{{
-        $t('library.likedSongs')
-      }}</div>
+    <ContextMenu ref="personalFmPlayModeTabMenu">
+      <div class="item" @click="setPersonalFmMode('normal')">红心 Radio</div>
       <hr />
-      <div class="item" @click="playIntelligenceList">{{
-        $t('contextMenu.cardiacMode')
-      }}</div>
+      <div class="item" @click="setPersonalFmMode('small')">小众 Radio</div>
+    </ContextMenu>
+
+    <ContextMenu ref="personalFmBotModeTabMenu">
+      <div class="item" @click="setPersonalFmBot(0)">Alpha 推荐口味相近的歌曲</div>
+      <hr />
+      <div class="item" @click="setPersonalFmBot(1)">Beta 推荐同类型的歌曲</div>
+      <hr />
+      <div class="item" @click="setPersonalFmBot(2)">Gamma 推荐不同类型的歌曲</div>
     </ContextMenu>
   </div>
 </template>
@@ -221,6 +181,8 @@ import { uploadSong } from '@/api/user';
 import { getLyric } from '@/api/track';
 import NProgress from 'nprogress';
 import locale from '@/locale';
+import server from 'kugoumusicapi/server';
+
 
 import ContextMenu from '@/components/ContextMenu.vue';
 import TrackList from '@/components/TrackList.vue';
@@ -251,7 +213,7 @@ export default {
     };
   },
   computed: {
-    ...mapState(['data', 'liked']),
+    ...mapState(['data', 'liked', 'player']),
     /**
      * @returns {string[]}
      */
@@ -282,8 +244,8 @@ export default {
       return this.data.libraryPlaylistFilter || 'all';
     },
     filterPlaylists() {
-      const playlists = this.liked.playlists.slice(1);
-      const userId = this.data.user.userId;
+      const playlists = this.liked.playlists.slice(2);
+      const userId = this.data.user.userid;
       if (this.playlistFilter === 'mine') {
         return playlists.filter(p => p.creator.userId === userId);
       } else if (this.playlistFilter === 'liked') {
@@ -300,6 +262,32 @@ export default {
       }
       return [];
     },
+    randomLikedSongs() {
+      return this.getRandomTracks(this.liked.songsWithDetails);
+    },
+    personFMBotName() {
+      if (this.player.songPoolId === 0) {
+        return "Alpha"
+      } else if (this.player.songPoolId === 1) {
+        return "Beta"
+      } else if (this.player.songPoolId === 2) {
+        return "Gamma"
+      }
+    },
+    personFMPlayModeName() {
+      if (this.player.mode === 'normal') {
+        return "红心 Radio"
+      } else if (this.player.mode === 'small') {
+        return "小众 Radio"
+      }
+    },
+    playingLikedSong() {
+      if (!this.player._isPersonalFM && this.player._playlistSource.id === this.data.likedSongPlaylistID && this.player._playing) {
+        return true
+      }
+      return false
+    }
+
   },
   created() {
     setTimeout(() => {
@@ -336,12 +324,47 @@ export default {
       this.$store.dispatch('fetchCloudDisk');
       this.$store.dispatch('fetchPlayHistory');
     },
+    getRandomTracks(songs) {
+      const uniqueSongs = [];
+      const songsCopy = [...songs];
+
+      while (uniqueSongs.length < 16 && songsCopy.length > 0) {
+        const randomIndex = Math.floor(Math.random() * songsCopy.length);
+        uniqueSongs.push(songsCopy[randomIndex]);
+        songsCopy.splice(randomIndex, 1);
+      }
+
+      return uniqueSongs;
+    },
     playLikedSongs() {
-      this.$store.state.player.playPlaylistByID(
-        this.liked.playlists[0].id,
-        'first',
-        true
-      );
+      if (!this.player._isPersonalFM && this.player._playlistSource.id === this.data.likedSongPlaylistID) {
+        this.player.playOrPause();
+      } else {
+        this.$store.state.player.playPlaylistByID(
+          this.data.likedSongPlaylistID,
+          'first',
+          true
+        );
+      }
+    },
+    playPersonalFmSongs() {
+      if (this.player._isPersonalFM) {
+        this.player.playOrPause();
+      } else {
+        this.$store.state.player.playPersonalFM()
+      }
+    },
+    setPersonalFmMode(mode) {
+      if (this.player.mode !== mode) {
+        this.$store.state.player.mode = mode
+        this.$store.state.player.playPersonalFM()
+      }
+    },
+    setPersonalFmBot(type) {
+      if (this.player.songPoolId !== type) {
+        this.$store.state.player.songPoolId = type
+        this.$store.state.player.playPersonalFM()
+      }
     },
     playIntelligenceList() {
       this.$store.state.player.playIntelligenceListById(
@@ -366,12 +389,12 @@ export default {
       getLyric(
         this.liked.songs[randomNum(0, this.liked.songs.length - 1)]
       ).then(data => {
-        if (data.lrc !== undefined) {
-          const isInstrumental = data.lrc.lyric
+        if (data !== undefined) {
+          const isInstrumental = data
             .split('\n')
             .filter(l => l.includes('纯音乐，请欣赏'));
           if (isInstrumental.length === 0) {
-            this.lyric = data.lrc.lyric;
+            this.lyric = data;
           }
         }
       });
@@ -392,6 +415,12 @@ export default {
     },
     openPlayModeTabMenu(e) {
       this.$refs.playModeTabMenu.openMenu(e);
+    },
+    openPersonalFmPlayModeTabMenu(e) {
+      this.$refs.personalFmPlayModeTabMenu.openMenu(e);
+    },
+    openPersonalFmBotModeTabMenu(e) {
+      this.$refs.personalFmBotModeTabMenu.openMenu(e);
     },
     changePlaylistFilter(type) {
       this.updateData({ key: 'libraryPlaylistFilter', value: type });
@@ -443,9 +472,15 @@ h1 {
   }
 }
 
+.button-group {
+  flex: 3;
+  display: flex;
+  flex-direction: column;
+}
+
 .liked-songs {
   flex: 3;
-  margin-top: 8px;
+  margin: 12px;
   cursor: pointer;
   border-radius: 16px;
   padding: 18px 24px;
