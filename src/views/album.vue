@@ -222,7 +222,7 @@ export default {
       }
     },
     tracksByDisc() {
-      return []
+      return [];
       if (this.tracks.length <= 1) return [];
       const pairs = toPairs(groupBy(this.tracks, 'cd'));
       return sortBy(pairs, p => p[0]).map(items => ({

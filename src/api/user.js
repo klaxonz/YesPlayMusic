@@ -50,10 +50,10 @@ export function userPlaylist(params) {
   }).then(result => {
     result.data.info.forEach(playlist => {
       playlist.creator = {
-        userId: playlist.list_create_userid
-      }
+        userId: playlist.list_create_userid,
+      };
     });
-    return result
+    return result;
   });
 }
 

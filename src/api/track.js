@@ -16,13 +16,13 @@ import {
  */
 export function getMP3(id) {
   const getQuality = () => {
-      const qualityMap = {
-    '128000': '128',
-    '320000': '320',
-    'flac': 'flac',
-  };
-  const quality = store.state.settings?.musicQuality ?? '320000';
-  return qualityMap[quality] || 'high';
+    const qualityMap = {
+      128000: '128',
+      320000: '320',
+      flac: 'flac',
+    };
+    const quality = store.state.settings?.musicQuality ?? '320000';
+    return qualityMap[quality] || 'high';
   };
 
   return request({
@@ -31,7 +31,7 @@ export function getMP3(id) {
     params: {
       hash: id,
       quality: getQuality(),
-      timestamp: new Date().getTime()
+      timestamp: new Date().getTime(),
     },
   });
 }
@@ -48,39 +48,43 @@ export function getTrackDetail(ids) {
       method: 'get',
       params: { hash: ids },
     }).then(data => {
-        const songs = data.data;
-        const promises = songs.map(async song => {
-          const basename = song.name.replace('.mp3', '');
-          const splitnames = basename.split(' - ');
-          const songname = splitnames[1].trim();
-          song.name = songname;
-          song.dt = song.info.duration
-          song.ar = [];
+      const songs = data.data;
+      const promises = songs.map(async song => {
+        const basename = song.name.replace('.mp3', '');
+        const splitnames = basename.split(' - ');
+        const songname = splitnames[1].trim();
+        song.name = songname;
+        song.dt = song.info.duration;
+        song.ar = [];
 
-          const albumResult = await request({
-            url: '/images',
-            method: 'get',
-            params: { hash: song.hash },
-          });
-
-          song.al = {
-            id: albumResult?.data?.[0]?.album?.[0]?.album_id || '',
-            name: albumResult?.data?.[0]?.album?.[0]?.album_name || '',
-            picUrl: albumResult?.data?.[0]?.album?.[0]?.sizable_cover?.replace("{size}", '480') || '',
-          };
-
-          albumResult.data[0].author.forEach(singer => {
-            song.ar.push({
-              id: singer.author_id,
-              name: singer.author_name,
-            });
-          });
-
-          return song;
+        const albumResult = await request({
+          url: '/images',
+          method: 'get',
+          params: { hash: song.hash },
         });
 
-        return Promise.all(promises).then(songs => ({ songs }));
-  });
+        song.al = {
+          id: albumResult?.data?.[0]?.album?.[0]?.album_id || '',
+          name: albumResult?.data?.[0]?.album?.[0]?.album_name || '',
+          picUrl:
+            albumResult?.data?.[0]?.album?.[0]?.sizable_cover?.replace(
+              '{size}',
+              '480'
+            ) || '',
+        };
+
+        albumResult.data[0].author.forEach(singer => {
+          song.ar.push({
+            id: singer.author_id,
+            name: singer.author_name,
+          });
+        });
+
+        return song;
+      });
+
+      return Promise.all(promises).then(songs => ({ songs }));
+    });
   fetchLatest();
 
   let idsInArray = [String(ids)];
@@ -110,19 +114,18 @@ export function getLyric(hash) {
         hash,
       },
     }).then(async result => {
-      
-     const lc = await request({
+      const lc = await request({
         url: '/lyric',
         method: 'get',
         params: {
           id: result.candidates[0].id,
           accesskey: result.candidates[0].accesskey,
           fmt: 'lrc',
-          decode: true
+          decode: true,
         },
       }).then(result => {
         return result.decodeContent;
-      })
+      });
       cacheLyric(hash, lc);
       return lc;
     });
@@ -162,14 +165,14 @@ export function topSong(type) {
 export function likeATrack(params) {
   params.timestamp = new Date().getTime();
 
-  const { track, like } = params
+  const { track, like } = params;
 
-  const listid = 2
+  const listid = 2;
   const isPersonalFM = store.state.player._isPersonalFM;
-  const data = `${track.name}|${track.hash}|${track.album_id}|${track.album_audio_id}`
+  const data = `${track.name}|${track.hash}|${track.album_id}|${track.album_audio_id}`;
   if (like) {
     if (isPersonalFM) {
-      store.state.player.likeFMTrack('click_red')
+      store.state.player.likeFMTrack('click_red');
     }
 
     return request({
@@ -180,10 +183,10 @@ export function likeATrack(params) {
         data,
         timestamp: new Date().getTime(),
       },
-    });  
+    });
   } else {
     if (isPersonalFM) {
-      store.state.player.likeFMTrack('cancel_red')
+      store.state.player.likeFMTrack('cancel_red');
     }
 
     return request({
@@ -194,15 +197,18 @@ export function likeATrack(params) {
         fileids: track.fileid,
         timestamp: new Date().getTime(),
       },
-    });  
+    });
   }
-
-
 }
 
-export function personalFm(mode='normal', song_pool_id = 0, action='play', isOverPlay = true, playtime = 0) {
-
-  const track = undefined
+export function personalFm(
+  mode = 'normal',
+  song_pool_id = 0,
+  action = 'play',
+  isOverPlay = true,
+  playtime = 0
+) {
+  const track = undefined;
 
   const params = {
     hash: track?.hash,
@@ -211,13 +217,13 @@ export function personalFm(mode='normal', song_pool_id = 0, action='play', isOve
     action,
     playtime,
     isOverPlay,
-  }
+  };
 
   return request({
     url: '/personal/fm',
     method: 'post',
     params,
-  })
+  });
 }
 
 /**

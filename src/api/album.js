@@ -1,15 +1,15 @@
 import request from '@/utils/request';
 import { cacheAlbum, getAlbumFromCache } from '@/utils/db';
 
-
 /**
  * 获取真实的封面 URL
  * 说明：size 可选参数有 240, 480
- * @param {*} cover 
+ * @param {*} cover
  * @param {number} size
- * @returns 
+ * @returns
  */
-const buildCoverUrl = (cover, size = 480) => cover?.replace('{size}', size) || '';
+const buildCoverUrl = (cover, size = 480) =>
+  cover?.replace('{size}', size) || '';
 
 /**
  * 获取专辑内容
@@ -18,16 +18,19 @@ const buildCoverUrl = (cover, size = 480) => cover?.replace('{size}', size) || '
  */
 export async function getAlbum(id) {
   const cachedData = await getAlbumFromCache(id);
-  return cachedData || fetchAlbumDetails(id).then(data => {
-    cacheAlbum(id, data);
-    return data;
-  });
+  return (
+    cachedData ||
+    fetchAlbumDetails(id).then(data => {
+      cacheAlbum(id, data);
+      return data;
+    })
+  );
 }
 
 /**
  * 获取专辑详情
- * @param {number} albumId 
- * @returns 
+ * @param {number} albumId
+ * @returns
  */
 async function fetchAlbumDetails(albumId) {
   const albumData = await request({
@@ -63,11 +66,13 @@ async function fetchAlbumDetails(albumId) {
     ar: song.authors.map(ar => ({ id: ar.author_id, name: ar.author_name })),
   }));
 
-  albumData.artist = songs.length > 0 ? { id: songs[0].ar[0].id, name: album.author_name } : null;
+  albumData.artist =
+    songs.length > 0
+      ? { id: songs[0].ar[0].id, name: album.author_name }
+      : null;
 
   return albumData;
 }
-
 
 /**
  * 获取指定专辑的歌曲列表
@@ -81,7 +86,7 @@ export function getAlbumSongs(id) {
     params: {
       id,
     },
-  })
+  });
 }
 
 /**

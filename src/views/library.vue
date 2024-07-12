@@ -13,19 +13,28 @@
           <div class="bottom">
             <div class="titles">
               <div class="title">
-                私人FM 
-                <span @click.stop="openPersonalFmPlayModeTabMenu" style="font-size: 1rem; margin-left: 4px;"> 
+                私人FM
+                <span
+                  @click.stop="openPersonalFmPlayModeTabMenu"
+                  style="font-size: 1rem; margin-left: 4px"
+                >
                   {{ personFMPlayModeName }}
-                 </span>
+                </span>
               </div>
-              <div 
+              <div
                 v-if="player._isPersonalFM"
-                class="sub-title" @click="openPersonalFmBotModeTabMenu">
+                class="sub-title"
+                @click="openPersonalFmBotModeTabMenu"
+              >
                 {{ personFMBotName }} 正在为你推荐
               </div>
             </div>
             <button @click.stop="playPersonalFmSongs">
-              <svg-icon :icon-class="player._isPersonalFM && player._playing ? 'pause' : 'play'" />
+              <svg-icon
+                :icon-class="
+                  player._isPersonalFM && player._playing ? 'pause' : 'play'
+                "
+              />
             </button>
           </div>
         </div>
@@ -164,11 +173,15 @@
     </ContextMenu>
 
     <ContextMenu ref="personalFmBotModeTabMenu">
-      <div class="item" @click="setPersonalFmBot(0)">Alpha 推荐口味相近的歌曲</div>
+      <div class="item" @click="setPersonalFmBot(0)"
+        >Alpha 推荐口味相近的歌曲</div
+      >
       <hr />
       <div class="item" @click="setPersonalFmBot(1)">Beta 推荐同类型的歌曲</div>
       <hr />
-      <div class="item" @click="setPersonalFmBot(2)">Gamma 推荐不同类型的歌曲</div>
+      <div class="item" @click="setPersonalFmBot(2)"
+        >Gamma 推荐不同类型的歌曲</div
+      >
     </ContextMenu>
   </div>
 </template>
@@ -182,7 +195,6 @@ import { getLyric } from '@/api/track';
 import NProgress from 'nprogress';
 import locale from '@/locale';
 import server from 'kugoumusicapi/server';
-
 
 import ContextMenu from '@/components/ContextMenu.vue';
 import TrackList from '@/components/TrackList.vue';
@@ -267,27 +279,30 @@ export default {
     },
     personFMBotName() {
       if (this.player.songPoolId === 0) {
-        return "Alpha"
+        return 'Alpha';
       } else if (this.player.songPoolId === 1) {
-        return "Beta"
+        return 'Beta';
       } else if (this.player.songPoolId === 2) {
-        return "Gamma"
+        return 'Gamma';
       }
     },
     personFMPlayModeName() {
       if (this.player.mode === 'normal') {
-        return "红心 Radio"
+        return '红心 Radio';
       } else if (this.player.mode === 'small') {
-        return "小众 Radio"
+        return '小众 Radio';
       }
     },
     playingLikedSong() {
-      if (!this.player._isPersonalFM && this.player._playlistSource.id === this.data.likedSongPlaylistID && this.player._playing) {
-        return true
+      if (
+        !this.player._isPersonalFM &&
+        this.player._playlistSource.id === this.data.likedSongPlaylistID &&
+        this.player._playing
+      ) {
+        return true;
       }
-      return false
-    }
-
+      return false;
+    },
   },
   created() {
     setTimeout(() => {
@@ -337,7 +352,10 @@ export default {
       return uniqueSongs;
     },
     playLikedSongs() {
-      if (!this.player._isPersonalFM && this.player._playlistSource.id === this.data.likedSongPlaylistID) {
+      if (
+        !this.player._isPersonalFM &&
+        this.player._playlistSource.id === this.data.likedSongPlaylistID
+      ) {
         this.player.playOrPause();
       } else {
         this.$store.state.player.playPlaylistByID(
@@ -351,19 +369,19 @@ export default {
       if (this.player._isPersonalFM) {
         this.player.playOrPause();
       } else {
-        this.$store.state.player.playPersonalFM()
+        this.$store.state.player.playPersonalFM();
       }
     },
     setPersonalFmMode(mode) {
       if (this.player.mode !== mode) {
-        this.$store.state.player.mode = mode
-        this.$store.state.player.playPersonalFM()
+        this.$store.state.player.mode = mode;
+        this.$store.state.player.playPersonalFM();
       }
     },
     setPersonalFmBot(type) {
       if (this.player.songPoolId !== type) {
-        this.$store.state.player.songPoolId = type
-        this.$store.state.player.playPersonalFM()
+        this.$store.state.player.songPoolId = type;
+        this.$store.state.player.playPersonalFM();
       }
     },
     playIntelligenceList() {

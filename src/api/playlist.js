@@ -54,7 +54,7 @@ export function getPlaylistDetail(id, noCache = false) {
     if (data.data) {
       return getPlaylistTrack(id, noCache).then(result => {
         data.playlist = {};
-        data.playlist.creator = {}
+        data.playlist.creator = {};
         data.playlist.id = id;
         data.playlist.name = data.data[0].name;
         data.playlist.description = data.data[0].intro;
@@ -65,17 +65,17 @@ export function getPlaylistDetail(id, noCache = false) {
         data.playlist.tracks = result.data.info;
         data.playlist.trackIds = result.data.info.map(item => item.hash);
         result.data.info.forEach(item => {
-          const basename = item.name.replace('.mp3', '')
-          const splitnames = basename.split(' - ')
-          const name = splitnames[1].trim()
+          const basename = item.name.replace('.mp3', '');
+          const splitnames = basename.split(' - ');
+          const name = splitnames[1].trim();
           item.name = name;
-          item.ar = item.singerinfo
-          item.al = {}
-          item.al.id = item.albuminfo.id
-          item.al.name = item.albuminfo.name
-          item.al.picUrl = item.cover.replace('{size}', '480')
-          item.dt = item.timelen
-          item.id = item.audio_id
+          item.ar = item.singerinfo;
+          item.al = {};
+          item.al.id = item.albuminfo.id;
+          item.al.name = item.albuminfo.name;
+          item.al.picUrl = item.cover.replace('{size}', '480');
+          item.dt = item.timelen;
+          item.id = item.audio_id;
         });
 
         return data;
@@ -89,19 +89,19 @@ export function getPlaylistDetail(id, noCache = false) {
  * 获取歌单歌曲
  * @param {number} hash 歌曲 hash
  * @param {*} noCache 是否读取缓存 默认为 false
- * @returns 
+ * @returns
  */
 export function getPlaylistTrack(id, noCache = false) {
   const params = {
     id: id,
     page: 1,
     pagesize: 300,
-  }
+  };
   if (noCache) params.timestamp = new Date().getTime();
   return request({
     url: '/playlist/track/all',
     method: 'get',
-    params
+    params,
   });
 }
 

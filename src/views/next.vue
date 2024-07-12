@@ -88,7 +88,7 @@ export default {
     ...mapActions(['playTrackOnListByID']),
     loadTracks() {
       // 获取播放列表当前歌曲后100首歌
-      console.log('list', this.player)
+      console.log('list', this.player);
       let trackIDs = this.player.list.slice(
         this.player.current + 1,
         this.player.current + 100

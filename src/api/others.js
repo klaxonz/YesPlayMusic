@@ -39,15 +39,15 @@ export function search(params) {
  * - is_overplay : 是否结束播放，0：否，1：是
  * - playtime : 播放时长，单位：秒
  * - remain_songcnt : 剩余歌曲数量
- * @param {string} hash 
- * @param {number} songid 
- * @param {string} mode 
- * @param {string} action 
- * @param {number} songPoolId 
- * @param {number} isOverplay 
- * @param {number} playtime 
- * @param {number} remainSongCnt 
- * @returns 
+ * @param {string} hash
+ * @param {number} songid
+ * @param {string} mode
+ * @param {string} action
+ * @param {number} songPoolId
+ * @param {number} isOverplay
+ * @param {number} playtime
+ * @param {number} remainSongCnt
+ * @returns
  */
 export function personalFM(
   hash,
@@ -57,9 +57,8 @@ export function personalFM(
   songPoolId = 0,
   isOverplay = 0,
   playtime = 0,
-  remainSongCnt = 0,
+  remainSongCnt = 0
 ) {
-
   const params = {
     hash: hash,
     songid: songid,
@@ -70,12 +69,12 @@ export function personalFM(
     playtime: playtime,
     remain_songcnt: remainSongCnt,
     timestamp: new Date().getTime(),
-  }
+  };
 
   return request({
     url: '/personal/fm',
     method: 'get',
-    params: params
+    params: params,
   });
 }
 

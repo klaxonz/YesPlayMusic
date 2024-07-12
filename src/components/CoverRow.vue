@@ -100,7 +100,7 @@ export default {
       return `/${this.type}/${item.id}`;
     },
     getImageUrl(item) {
-      return item.pic.replace('{size}', '480')
+      return item.pic.replace('{size}', '480');
       if (item.img1v1Url) {
         let img1v1ID = item.img1v1Url.split('/');
         img1v1ID = img1v1ID[img1v1ID.length - 1];

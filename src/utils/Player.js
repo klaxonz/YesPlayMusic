@@ -42,9 +42,7 @@ const excludeSaveKeys = [
 ];
 
 function setTitle(track) {
-  document.title = track
-    ? `${track.name} - YesPlayMusic`
-    : 'YesPlayMusic';
+  document.title = track ? `${track.name} - YesPlayMusic` : 'YesPlayMusic';
   if (isCreateTray) {
     ipcRenderer?.send('updateTrayTooltip', document.title);
   }
@@ -84,9 +82,9 @@ export default class {
     // this._personalFMNextTrack = {
     //   id: 0,
     // }; // 私人FM下一首歌曲信息（为了快速加载下一首）
-    this._personalFMNextTrackList = []
-    this._mode = 'normal'
-    this._songPoolId = 0
+    this._personalFMNextTrackList = [];
+    this._mode = 'normal';
+    this._songPoolId = 0;
 
     /**
      * The blob records for cleanup.
@@ -210,7 +208,7 @@ export default class {
   set mode(mode) {
     this._mode = mode;
   }
-  get progress() { 
+  get progress() {
     return this._progress;
   }
   set progress(value) {
@@ -272,7 +270,7 @@ export default class {
     }, 1000);
   }
   _getNextTrack() {
-     const next = this._reversed ? this.current - 1 : this.current + 1;
+    const next = this._reversed ? this.current - 1 : this.current + 1;
 
     if (this._playNextList.length > 0) {
       let trackID = this._playNextList[0];
@@ -765,16 +763,16 @@ export default class {
     this._personalFMLoading = true;
     let songs = [];
 
-    let playtime = 0
-    let isOverplay = 0
-    let playProgress = this.progress / 2
+    let playtime = 0;
+    let isOverplay = 0;
+    let playProgress = this.progress / 2;
     if (playProgress > 100) {
-      playProgress = 100
-      isOverplay = 1
-      playtime = this.currentTrackDuration
+      playProgress = 100;
+      isOverplay = 1;
+      playtime = this.currentTrackDuration;
     } else {
-      playtime = playProgress * this.currentTrackDuration / 100
-      playtime = parseInt(playtime)
+      playtime = (playProgress * this.currentTrackDuration) / 100;
+      playtime = parseInt(playtime);
     }
 
     const result = await personalFM(
@@ -787,7 +785,7 @@ export default class {
       playtime,
       this._personalFMNextTrackList.length
     ).catch(() => null);
-    console.log('personalFM', result)
+    console.log('personalFM', result);
     if (!result) {
       this._personalFMLoading = false;
       store.dispatch('showToast', 'personal fm timeout');
@@ -811,16 +809,16 @@ export default class {
 
     this._personalFMLoading = true;
 
-    let playtime = 0
-    let isOverplay = 0
-    let playProgress = this.progress / 2
+    let playtime = 0;
+    let isOverplay = 0;
+    let playProgress = this.progress / 2;
     if (playProgress > 100) {
-      playProgress = 100
-      isOverplay = 1
-      playtime = this.currentTrackDuration
+      playProgress = 100;
+      isOverplay = 1;
+      playtime = this.currentTrackDuration;
     } else {
-      playtime = playProgress * this.currentTrackDuration / 100
-      playtime = parseInt(playtime)
+      playtime = (playProgress * this.currentTrackDuration) / 100;
+      playtime = parseInt(playtime);
     }
 
     const result = await personalFM(
@@ -844,9 +842,9 @@ export default class {
 
     this._personalFMTrack = this._personalFMNextTrackList.shift();
     if (action === 'garbage') {
-      this._personalFMNextTrackList.length = 0
+      this._personalFMNextTrackList.length = 0;
     }
-    console.log('sds', songs)
+    console.log('sds', songs);
     this._personalFMNextTrackList.push(...songs);
 
     if (this._isPersonalFM) {
@@ -1012,22 +1010,24 @@ export default class {
     }
   }
   async playPersonalFM() {
-    const fmResult = await personalFM()
+    const fmResult = await personalFM();
     const songlist = fmResult.data.song_list.reverse();
-    
+
     this._personalFMTrack = songlist[0];
     this._personalFMNextTrackList = songlist.slice(1, songlist.length);
- 
+
     this._isPersonalFM = true;
     if (this.currentTrackID !== this._personalFMTrack.hash) {
       this._replaceCurrentTrack(this._personalFMTrack.hash, true);
-      this._personalFMNextTrackList.forEach(song => this.addTrackToPlayNext(song.hash, false))
+      this._personalFMNextTrackList.forEach(song =>
+        this.addTrackToPlayNext(song.hash, false)
+      );
     } else {
       this.playOrPause();
     }
   }
   async moveToFMTrash() {
-    this.playNextFMTrack('garbage')
+    this.playNextFMTrack('garbage');
   }
 
   sendSelfToIpcMain() {

@@ -77,7 +77,7 @@
                       >{{ album.name }}
                     </router-link>
                   </span>
-                </div> 
+                </div>
               </div>
               <div class="top-right">
                 <div class="volume-control">
